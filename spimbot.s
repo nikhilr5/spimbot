@@ -73,7 +73,7 @@ main:
 
 infinite_loop:
 
-     li $t1, 20
+     li $t1, 1000
      bgt		$s0, $t1, other_infinite_loop	# if $s0 > 30 then other_uinfinte_loop
 
     la $t1, puzzle #t1 = puzzle address
@@ -138,31 +138,76 @@ pastfor:
     li $t2, 4 # t2= 4 friendly
     li $t3, 2 #t3 = 2 #host_mask
     li $t4, 16 #t4 = 16 player_mask
+    li $t5, 8 #t5 = 8 enemy_mask
 
     and $t2, $t2, $t1 #scanner_data->tile_type & friendly
     and $t3, $t3, $t1 #scanner_data->tile_type & HOST
     and $t4, $t4, $t1 #scanner_data->tile_type & PLAYER_MASK
+    and $t5, $t5, $t1 #scanner_data->tile_type & enemy
 
+    ble		$t4, $0, pastif	# if Player_mask > 0 then load_number
+    ble		$t5, $0, pastif	# if $t5 <= $0 then target
+    
+
+    sw $0, SHOOT_UDP_PACKET #shoot udp
+    j pastAngleControl
+
+next:
     bgt		$t2, $0, pastif	# if friendly_mask detected >= 0 then pastif
     ble		$t3, $0, pastif	# if host_mask <= 0 then pastif
     sw $0, SHOOT_UDP_PACKET #shoot udp
     j pastAngleControl
 
 
+load_number:
+    li $t2, 0
+    li $t4, 1
+    li $t1, 20
+shoot_for_loop:
+    li $t3, 20
+    bgt $t2, $t3, pastAngleControl
+    sw $0, SHOOT_UDP_PACKET #shoot udp
+    li $s1, 10 #set s0 equal to 10
+
+    li $t0, 0
+    sw $t0, ANGLE_CONTROL
+    #shoot like a fan
+
+    mul $t5, $t1, $t4 #get angle
+
+    sw $t5, ANGLE
+   # sw $t0, VELOCITY
+
+    bgt $t5, $0, positive
+    sub $t4, $t4, 1 #t4 - 1
+    mul $t4, $t4, -1 # t4 * -1
+    j past_new_angle
+
+postive: 
+    add $t4, $t4, 1
+    mul $t4, $t4, -1 # t4 * -1
+    j past_new_angle
+
+past_new_angle:
+    add $t2, $t2, 1
+
+    j shoot_for_loop
+
+
 pastif:
 
     li $t0, 0
     sw $t0, ANGLE_CONTROL
-    li $t1, 1 #shift by 3 degrees
+    li $t1, 3 #shift by 3 degrees
     sw $t1, ANGLE
     sw $t0, VELOCITY
     add $s1, $s1, 1 #s1++
-    j for
+    j pastfor
     
 
 pastAngleControl:
-    li $t0, 10
-    sw $t0, VELOCITY
+     li $t0, 10
+     sw $t0, VELOCITY
 
     j puzzle_not_ready
 
