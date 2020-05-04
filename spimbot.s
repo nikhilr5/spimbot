@@ -61,6 +61,8 @@ main:
     sw $s0, 0($sp)
     sw $s1, 4($sp)
     sw $ra, 8($sp)
+    sw $s2, 12($sp)
+    sw $s3, 16($sp)
 
 
     li	$a0, 10
@@ -70,6 +72,8 @@ main:
 
 
     li $s0, 0
+    li $s2, 0
+    li $s3, 25 #starting scanners
 
 infinite_loop:
 
@@ -123,9 +127,17 @@ for:
     j for
 
 pastfor:
-    li $t0, 30
+    
+    li $t6, 20
+    ble $s2, $t6, skip_increase_scanner
+    li $t5, 50 #max scanners
+    bgt $s3, $t5, skip_increase_scanner
+    add $s3, $s3, 5 #incrase scanners now
+    li $s2, 0
 
-    bgt $s1, $t0, pastAngleControl
+skip_increase_scanner:
+    
+    bgt $s1, $s3, pastAngleControl
 
     
 
@@ -154,6 +166,10 @@ pastfor:
 
 shoot_for_loop:
     li $t3, 5
+    li $t5, 50
+    blt $s3, $t5, not_increase_shooters
+    li $t3, 8
+not_increase_shooters:
     bge $t2 $t3, pastAngleControl
 
     sw $0, SHOOT_UDP_PACKET #shoot udp
@@ -171,7 +187,7 @@ shoot_for_loop:
 
      add $t2, $t2, 1
 
-    j shoot_for_loop
+    j not_increase_shooters
 
 next:
     bgt		$t2, $0, pastif	# if friendly_mask detected >= 0 then pastif
@@ -196,12 +212,16 @@ pastAngleControl:
      li $t0, 10
      sw $t0, VELOCITY
 
+     add $s2, $s2, 1
+
     j puzzle_not_ready
 
 
     lw $s0, 0($sp)
     lw $s1, 4($sp)
     lw $ra, 8($sp)
+    lw $s2, 12($sp)
+    lw $s3, 16($sp)
     jr      $ra
 
 .kdata
